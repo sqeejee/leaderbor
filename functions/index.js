@@ -5,13 +5,28 @@ admin.initializeApp();
 exports.updateTopPostTimer = functions.pubsub.schedule('every 1 minutes').timeZone('UTC').onRun(async (context) => {
   try {
     const postsCollectionRef = admin.firestore().collection('posts');
-    const topPostQuery = postsCollectionRef.where('isNumberOne', '==', true).limit(1);
+
+    // Check if there is an existing top post
+    const existingTopPostQuery = postsCollectionRef.where('isNumberOne', '==', true).limit(1);
+    const existingTopPostSnapshot = await existingTopPostQuery.get();
+
+    if (!existingTopPostSnapshot.empty) {
+      // Reset isNumberOne for existing top post
+      const existingTopPostDoc = existingTopPostSnapshot.docs[0];
+      await existingTopPostDoc.ref.update({
+        isNumberOne: false,
+      });
+    }
+
+    // Find the new top post
+    const topPostQuery = postsCollectionRef.orderBy('value', 'desc').limit(1);
     const topPostSnapshot = await topPostQuery.get();
 
     if (!topPostSnapshot.empty) {
       const topPostDoc = topPostSnapshot.docs[0];
       const currentTimer = topPostDoc.data().timer || 0;
-      
+
+      // Update the new top post
       await topPostDoc.ref.update({
         timer: currentTimer + 1, // Increment the timer by 1 (adjust as needed)
         isNumberOne: true,
