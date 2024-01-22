@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
 import './home.styles.scss';
 import LeaderboardEntry from '../../components/leaderboard-entry/leaderboard-entry.component';
+import TopPostTimer from '../../components/top-post-timer/top-post-timer';
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -32,6 +33,7 @@ const Home = () => {
             <LeaderboardEntry key={post.id} entry={post} position={pos++} />
           ))}
       </div>
+      <TopPostTimer />
     </div>
   );
 };

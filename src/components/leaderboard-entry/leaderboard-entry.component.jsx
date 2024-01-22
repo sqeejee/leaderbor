@@ -3,6 +3,7 @@
 import React from 'react';
 import './leaderboard-entry.styles.scss';
 
+
 const LeaderboardEntry = ({ entry, position }) => {
   const { username, message, image, value, isNumberOne } = entry;
   const pos = position += 1;
@@ -58,7 +59,7 @@ const LeaderboardEntry = ({ entry, position }) => {
             <p>${value}</p>
         </div>
         {
-            isNumberOne ? <p>Number 1 for 1 hour</p> : null
+            isNumberOne ? <p>This is the number one post</p> : null
         }
       </div>
     </div>
