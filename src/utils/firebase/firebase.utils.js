@@ -3,7 +3,7 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPas
   signInWithEmailAndPassword,
   signOut, onAuthStateChanged
 } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, query, orderBy, limit, where} from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 
 
@@ -30,31 +30,49 @@ export const signInWithGooglePopup = () => signInWithPopup(auth, googleProvider)
 export const db = getFirestore();
 
 export const createUserDocumentFromAuth = async (userAuth, additionalInformation = {}) => {
-  const userDocRef = doc(db, 'users', userAuth.uid);
+  const { uid, displayName, email } = userAuth;
+
+  if (!displayName) {
+    console.error("Display name is null or undefined");
+    return;
+  }
+
+  // Check if the username (displayName) is already taken
+  const usernameDocRef = doc(db, 'usernames', displayName);
+  const usernameSnapshot = await getDoc(usernameDocRef);
+
+  if (usernameSnapshot.exists()) {
+    return; // Exit the function if the username is not unique
+  }
+
+  // If the username is unique, proceed to create the user document
+  const userDocRef = doc(db, 'users', uid);
 
   const userSnapshot = await getDoc(userDocRef);
 
   if (!userSnapshot.exists()) {
-    const { email } = userAuth;
     const createdAt = new Date();
-    const displayName = additionalInformation.displayName;
 
     try {
+      // Set the document in the 'users' collection
       await setDoc(userDocRef, {
         displayName,
         email,
         createdAt,
         ...additionalInformation
-      },
-      console.log("user created", displayName));
+      });
+
+      // Set the document in the 'usernames' collection for uniqueness check
+      await setDoc(usernameDocRef, { uid });
+
+      console.log("User created:", displayName);
     } catch (error) {
-      console.log('error creating the user', error.message);
+      console.error('Error creating the user:', error.message);
     }
   }
 
   return userDocRef;
 };
-
 
 export const createAuthUserWithEmailAndPassword = async (email, password, displayName) => {
   if (!email || !password) return;
@@ -82,15 +100,102 @@ const updateDisplayName = async (user, displayName) => {
   }
 };
 
-  export const signInAuthUserWithEmailAndPassword = async (email, password) => {
-    if (!email || !password) return;
-  
-    return await signInWithEmailAndPassword(auth, email, password);
-  };
+export const signInAuthUserWithEmailAndPassword = async (email, password) => {
+  if (!email || !password) return;
 
-  export const signOutUser = () => {
-    signOut(auth);
-  };
+  return await signInWithEmailAndPassword(auth, email, password);
+};
 
-  export const onAuthStateChangedListener = (callback) => onAuthStateChanged(auth, callback);
+export const signOutUser = async () => await signOut(auth);
 
+export const onAuthStateChangedListener = (callback) => onAuthStateChanged(auth, callback);
+
+export const doesUserExist = async (displayName) => {
+  try {
+    const userDocRef = doc(db, 'usernames', displayName);
+    const userSnapshot = await getDoc(userDocRef);
+
+    // Check if the document exists
+    console.log("userSnapshot", userSnapshot.exists());
+    return userSnapshot.exists();
+  } catch (error) {
+    return false; // Return false in case of an error
+  }
+};
+
+
+//This is all post related stuff
+export const addPost = async (userID, username, message, image, value) => {
+  try {
+    const userPostsQuery = query(collection(db, 'posts'), where('userID', '==', userID));
+    const userPostsSnapshot = await getDocs(userPostsQuery);
+
+    // Check if the user already has a post
+    if (!userPostsSnapshot.empty) {
+      throw new Error('User already has a post. Cannot add another post.');
+    }
+
+    // Ensure 'value' is a valid number
+    const numericValue = typeof value === 'number' ? value : parseFloat(value);
+
+    if (isNaN(numericValue)) {
+      throw new Error('Invalid value for post. Please provide a valid number for the "value" field.');
+    }
+
+    await addDoc(collection(db, 'posts'), {
+      userID,
+      username,
+      message,
+      image,
+      value: numericValue,
+      createdAt: new Date(),
+      position: 1, // Initial position for a new post
+      timer: 0, // Initial timer value
+      isNumberOne : false,
+    });
+
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Modify the 'getTopPosts' function
+export const getTopPosts = async () => {
+  try {
+    const postsCollectionRef = collection(db, 'posts');
+    const q = query(postsCollectionRef, orderBy('value', 'desc'), limit(100));
+    const querySnapshot = await getDocs(q);
+
+    const topPosts = [];
+
+    let isFirstPost = true; // To ensure only the first post gets isNumberOne: true
+
+    querySnapshot.forEach((doc) => {
+      const postData = doc.data();
+      if (postData && typeof postData.value === 'number') {
+        postData.isNumberOne = isFirstPost; // Set isNumberOne based on isFirstPost flag
+        isFirstPost = false; // Set the flag to false after the first post
+        topPosts.push({ id: doc.id, ...postData });
+      } else {
+        console.error('Invalid data structure in document:', doc.data());
+      }
+    });
+
+    return topPosts;
+  } catch (error) {
+    console.error('Error getting top posts:', error.message);
+    throw error;
+  }
+};
+
+export const doesUserHavePost = async (userID) => {
+  try {
+    const userPostsQuery = query(collection(db, 'posts'), where('userID', '==', userID));
+    const userPostsSnapshot = await getDocs(userPostsQuery);
+
+    return !userPostsSnapshot.empty;
+  } catch (error) {
+    console.error('Error checking if user has a post:', error.message);
+    throw error;
+  }
+};

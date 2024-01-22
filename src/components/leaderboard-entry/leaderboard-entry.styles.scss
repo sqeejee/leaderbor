@@ -1,0 +1,59 @@
+.entry-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 50px;
+    height: 30vh;
+    width: 60vw;
+  }
+  
+  .num {
+    font-size: 45px;
+    font-weight: bold;
+    margin-right: 10px;
+    color: #555;
+  }
+  
+  .small-num {
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .entry-content {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    padding-left: 10px;
+  }
+  
+  .entry-content p {
+    margin: 0;
+  }
+  
+  .entry-value {
+    color: black;
+    font-weight: bold;
+    font-size: 64px; /* Adjust the font size for the price value */
+    flex-grow: 1; /* Allow the price value to take up the available space */
+    margin-left: auto; /* Push the price value to the right */
+  }
+  
+  .entry-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1; /* Make sure the image is on top of other elements */
+    max-width: 100px; /* Ensure the image does not exceed the width of the container */
+    width: 100%;
+  }
+  
+  .entry-image img {
+    width: 200%; /* Make sure the image takes up the entire width of its container */
+    height: auto; /* Maintain the aspect ratio of the image */
+  }

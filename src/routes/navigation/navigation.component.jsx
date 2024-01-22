@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import { ReactComponent as CrwnLogo } from '../../assets/crown.svg';
 import './navigation.styles.scss';
 
-import { signOutUser } from "../../utils/firebase/firebase.utils";
 
 
 const Navigation = () =>{
@@ -22,10 +21,6 @@ const Navigation = () =>{
     }
   }, [currentUser, setCurrentUser]);
 
-  const signOutHandler = async () => {
-    await signOutUser();
-    setCurrentUser(null);
-  }
 
 
     return(
@@ -38,10 +33,10 @@ const Navigation = () =>{
             <CrwnLogo className="logo" />
             </Link>
             <div className="nav-links-container">
-                <Link className='nav-link' to="/shop">Shop</Link>
+                <Link className='nav-link' to="/purchase">Get on the board</Link>
                 {
                   currentUser ? (
-                    <span className="nav-link" onClick={signOutHandler}>Hi {userName}</span>
+                    <Link className='nav-link' to={`/user/${userName}`}>Hi {userName}</Link>
                     
                     )
                     : (<Link className='nav-link' to="/auth">Sign In</Link>
