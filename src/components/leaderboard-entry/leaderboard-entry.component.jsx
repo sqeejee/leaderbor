@@ -1,13 +1,29 @@
-// LeaderboardEntry.jsx
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './leaderboard-entry.styles.scss';
-
+import { formatTimeDuration } from '../../utils/firebase/methods/formatTimeduration.utils';
 
 const LeaderboardEntry = ({ entry, position }) => {
   const { username, message, image, value, isNumberOne } = entry;
-  const pos = position += 1;
+  const pos = position + 1;
 
+  const [displayedTimer, setDisplayedTimer] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Create an interval to update the displayed timer every second
+    const intervalId = setInterval(() => {
+      if (isMounted) {
+        setDisplayedTimer((prevTimer) => prevTimer + 1);
+      }
+    }, 1000);
+
+    // Cleanup the interval when the component unmounts
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   return (
     <div className='entry-container'>
@@ -58,9 +74,12 @@ const LeaderboardEntry = ({ entry, position }) => {
         <div className='entry-value'>
             <p>${value}</p>
         </div>
-        {
-            isNumberOne ? <p>This is the number one post</p> : null
-        }
+        {isNumberOne && (
+          <p>
+            This post has been number one for{' '}
+            {formatTimeDuration(displayedTimer)}.
+          </p>
+        )}
       </div>
     </div>
   );
