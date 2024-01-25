@@ -1,29 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import './leaderboard-entry.styles.scss';
-import { formatTimeDuration } from '../../utils/firebase/methods/formatTimeduration.utils';
+import TopPost from '../top-post/top-post.component';
+
 
 const LeaderboardEntry = ({ entry, position }) => {
   const { username, message, image, value, isNumberOne } = entry;
   const pos = position + 1;
 
-  const [displayedTimer, setDisplayedTimer] = useState(0);
+  const [rerenderFlag, setRerenderFlag] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // Create an interval to update the displayed timer every second
+    // Create an interval to update the state every second
     const intervalId = setInterval(() => {
-      if (isMounted) {
-        setDisplayedTimer((prevTimer) => prevTimer + 1);
-      }
+      setRerenderFlag((prevFlag) => !prevFlag);
     }, 1000);
 
     // Cleanup the interval when the component unmounts
     return () => {
-      isMounted = false;
       clearInterval(intervalId);
     };
-  }, []);
+  }, []); 
+
 
   return (
     <div className='entry-container'>
@@ -31,9 +28,7 @@ const LeaderboardEntry = ({ entry, position }) => {
         switch (pos) {
           case 1:
             return (
-              <div className='num'>
-                <p>1</p>
-              </div>
+              <TopPost post={entry} />
             );
           case 2:
             return (
@@ -61,6 +56,7 @@ const LeaderboardEntry = ({ entry, position }) => {
             );
         }
       })()}
+      {isNumberOne ? null :
       <div className='entry-content'>
         <div className='entry-username'>
             <p>{username}</p>
@@ -74,13 +70,8 @@ const LeaderboardEntry = ({ entry, position }) => {
         <div className='entry-value'>
             <p>${value}</p>
         </div>
-        {isNumberOne && (
-          <p>
-            This post has been number one for{' '}
-            {formatTimeDuration(displayedTimer)}.
-          </p>
-        )}
       </div>
+}
     </div>
   );
 };
