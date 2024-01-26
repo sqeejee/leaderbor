@@ -44,8 +44,18 @@ exports.updateTopPostTimer = functions.pubsub
     return null;
   });
 
+  
   exports.createStripCheckout = functions.https.onCall(async (data, context) => {
     const stripe = require("stripe")(functions.config().stripe.secret_key);
+  
+    // Extract the price from the request data
+    const price = data.price;
+  
+    // Ensure that the price is a valid positive number
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new functions.https.HttpsError('invalid-argument', 'Price must be a positive number.');
+    }
+  
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
@@ -56,7 +66,7 @@ exports.updateTopPostTimer = functions.pubsub
           quantity: 1,
           price_data: {
             currency: "usd",
-            unit_amount: (100) * 100,
+            unit_amount: Math.round(price * 100), // Convert dollars to cents
             product_data: {
               name: "Leaderboard entry",
             },
@@ -69,4 +79,3 @@ exports.updateTopPostTimer = functions.pubsub
       sessionId: session.id,
     };
   });
-  
