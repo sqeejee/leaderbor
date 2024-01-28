@@ -80,10 +80,13 @@ exports.updateTopPostTimer = functions.pubsub
     };
   });
 
-const functions2 = require('firebase-functions');
 const stripe = require('stripe')(functions.config().stripe.secret_key);
+const express = require('express');
+const cors = require('cors');
+const app = express();
+app.use(cors());
 
-exports.createPaymentIntent = functions2.https.onRequest(async (req, res) => {
+app.post('/create-payment-intent', async (req, res) => {
   try {
     // Get the amount from the request body
     const amount = req.body.amount;
@@ -101,3 +104,5 @@ exports.createPaymentIntent = functions2.https.onRequest(async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+exports.createPaymentIntent = functions.https.onRequest(app);

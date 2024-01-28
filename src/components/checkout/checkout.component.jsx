@@ -20,7 +20,7 @@ const DonationForm = () => {
     const stripe = await stripePromise;
 
     // Replace with your serverless function endpoint
-    const response = await fetch('/create-payment-intent', {
+    const response = await fetch('https://us-central1-crwn-clothui.cloudfunctions.net/createPaymentInten', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
