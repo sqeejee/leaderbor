@@ -44,7 +44,7 @@ exports.updateTopPostTimer = functions.pubsub
     return null;
   });
 
-  
+
   exports.createStripCheckout = functions.https.onCall(async (data, context) => {
     const stripe = require("stripe")(functions.config().stripe.secret_key);
   
@@ -79,3 +79,25 @@ exports.updateTopPostTimer = functions.pubsub
       sessionId: session.id,
     };
   });
+
+const functions2 = require('firebase-functions');
+const stripe = require('stripe')(functions.config().stripe.secret_key);
+
+exports.createPaymentIntent = functions2.https.onRequest(async (req, res) => {
+  try {
+    // Get the amount from the request body
+    const amount = req.body.amount;
+
+    // Create a PaymentIntent on Stripe
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd', // Change to your preferred currency
+    });
+
+    // Send the client secret to the client
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error.message);
+  }
+});
