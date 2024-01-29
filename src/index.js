@@ -6,6 +6,8 @@ import { UserProvider } from './contexts/users.context';
 import { ProductsProvider  } from './contexts/prodcut.context';
 import { BrowserRouter } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
+import {Elements} from '@stripe/react-stripe-js';
+import {stripePromise} from './utils/firebase/stripe/stripe.utils';
 
 const rootElement = document.getElementById('root');
 
@@ -16,7 +18,9 @@ root.render(
     <BrowserRouter>
       <UserProvider>
         <ProductsProvider>
+          <Elements stripe={stripePromise}>
         <App />
+          </Elements>
         </ProductsProvider>
       </UserProvider>
     </BrowserRouter>
