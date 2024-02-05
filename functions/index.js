@@ -105,4 +105,25 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 });
 
+app.post('/create-payment-intent', async (req, res) => {
+  try {
+    // Parse the amount from the request body
+    const { amount } = req.body;
+
+    // Create a PaymentIntent with Stripe
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd', // Assuming USD as currency
+      payment_method_types: ['card'],
+    });
+
+    // Respond with the paymentIntent information or just the client_secret
+    res.status(200).json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error('Stripe PaymentIntent creation failed:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Expose the API as a Firebase Cloud Function
 exports.createPaymentIntent = functions.https.onRequest(app);
