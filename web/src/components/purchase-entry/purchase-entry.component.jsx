@@ -28,17 +28,7 @@ const PurchaseEntry = () => {
     setFormFields(defaultFormFields);
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    
-    // Add your logic here to handle the submission like adding a post
-    // For now, we'll simulate a successful operation
-    console.log("Form Submitted:", { message, price, image });
-    resetFormFields();
-    // Redirect user or take any action after form submission
-    navigate('/user');
-  };
-
+  
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormFields({ ...formFields, [name]: value });
