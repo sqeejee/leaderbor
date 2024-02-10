@@ -28,7 +28,11 @@ const PurchaseEntry = () => {
     setFormFields(defaultFormFields);
   };
 
-  
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    console.log('fhi')
+  }
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormFields({ ...formFields, [name]: value });
