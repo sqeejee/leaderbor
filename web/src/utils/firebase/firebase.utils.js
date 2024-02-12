@@ -306,3 +306,56 @@ export const updatePost = async (postID, newMessage = null, newImage = null, add
     throw error;
   }
 };
+
+
+export const getTopUsersByPostTimer = async () => {
+  const postsQuery = query(collection(db, "posts"), orderBy("timer", "desc"), limit(100));
+  const querySnapshot = await getDocs(postsQuery);
+
+  let userIds = new Set();
+  querySnapshot.forEach((doc) => {
+    const postData = doc.data();
+    userIds.add(postData.userID); // Collect user IDs from posts
+  });
+
+  // Fetch user details for each userID
+  const usersDetails = await Promise.all(Array.from(userIds).map(async (userId) => {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return { id: userId, ...userSnap.data() }; // Return a user object including the id and other details
+    } else {
+      return null; // Handle the case where a user document might not exist
+    }
+  }));
+
+  // Filter out any nulls in case a user document does not exist
+  return usersDetails.filter(user => user !== null);
+};
+
+
+
+export const getTopUsersByMoneySpent = async () => {
+  const postsQuery = query(collection(db, "posts"), orderBy("value", "desc"), limit(100));
+  const querySnapshot = await getDocs(postsQuery);
+
+  let userIds = new Set();
+  querySnapshot.forEach((doc) => {
+    const postData = doc.data();
+    userIds.add(postData.userID); // Collect user IDs from posts
+  });
+
+  // Fetch user details for each userID
+  const usersDetails = await Promise.all(Array.from(userIds).map(async (userId) => {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      return { id: userId, ...userSnap.data() }; // Return a user object including the id and other details
+    } else {
+      return null; // Handle the case where a user document might not exist
+    }
+  }));
+
+  // Filter out any nulls in case a user document does not exist
+  return usersDetails.filter(user => user !== null);
+};
