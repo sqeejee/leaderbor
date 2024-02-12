@@ -12,6 +12,7 @@ import {
   getFirestore,
   doc,
   getDoc,
+  updateDoc,
   setDoc,
   addDoc,
   collection,
@@ -256,6 +257,52 @@ export const getPostByUserName = async (username) => {
       `Error getting post for user with username ${username}:`,
       error.message
     );
+    throw error;
+  }
+};
+
+
+export const updatePost = async (postID, newMessage = null, newImage = null, additionalValue = 0) => {
+  try {
+    const postDocRef = doc(db, "posts", postID);
+    const postSnapshot = await getDoc(postDocRef);
+
+    if (!postSnapshot.exists()) {
+      throw new Error("Post does not exist.");
+    }
+
+    const postData = postSnapshot.data();
+
+    // Prepare the update object
+    let updateObject = {};
+
+    // Ensure 'additionalValue' is a valid number and add it to the existing value
+    const numericAdditionalValue = typeof additionalValue === "number" ? additionalValue : parseFloat(additionalValue);
+    if (isNaN(numericAdditionalValue)) {
+      throw new Error('Invalid value for post update. Please provide a valid number for the "value" field.');
+    }
+
+    // Add to the current value
+    if (additionalValue !== 0) {
+      updateObject.value = postData.value + numericAdditionalValue;
+    }
+
+    // Only update message if a new message is provided
+    if (newMessage !== null) {
+      updateObject.message = newMessage;
+    }
+
+    // Only update image if a new image URL is provided
+    if (newImage !== null) {
+      updateObject.image = newImage;
+    }
+
+    // Update the post document with the new fields
+    await updateDoc(postDocRef, updateObject);
+    
+    console.log("Post updated successfully.");
+  } catch (error) {
+    console.error("Error updating the post:", error.message);
     throw error;
   }
 };

@@ -3,10 +3,9 @@ import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import FormInput from '../form-input/form-input.component';
 import Button from '../button/button.component';
 import axios from 'axios';
-import { addPost, doesUserHavePost } from '../../utils/firebase/firebase.utils';
+import { updatePost, getPostByUserName } from '../../utils/firebase/firebase.utils';
 import { useNavigate } from "react-router-dom";
 import { UserContext } from '../../contexts/users.context';
-import UpdatePost from '../updatePost/update-post.component';
 
 const CARD_OPTIONS = {
     iconStyle: 'solid',
@@ -28,13 +27,14 @@ const CARD_OPTIONS = {
     }
 };
 
-const Submit = () => {
+const UpdatePost = () => {
     const { currentUser } = useContext(UserContext);
     const navigate = useNavigate();
     const stripe = useStripe();
     const elements = useElements();
     const [success, setSuccess] = useState(false);
-    const [userHasPost, setUserHasPost] = useState(false);
+    const [originalPrice, setOriginalPrice] = useState(0); // Store the original price for comparison
+    const [postDetails, setPostDetails] = useState(null); // Store the fetched post details
 
     const defaultFormFields = {
         price: "",
@@ -46,32 +46,59 @@ const Submit = () => {
     const { message, price, image } = formFields;
 
     useEffect(() => {
-        const checkUserPost = async () => {
+        const fetchUserPost = async () => {
             if (currentUser) {
-                const hasPost = await doesUserHavePost(currentUser.uid);
-                setUserHasPost(hasPost);
+                try {
+                    const post = await getPostByUserName(currentUser.displayName);
+                    if (post) {
+                        setFormFields({
+                            message: post.message || "",
+                            price: post.value.toString() || "", // Assuming 'value' is the field for price in your post data model
+                            image: post.image || "",
+                        });
+                        setOriginalPrice(post.value || 0); // Set the original price for comparison
+                        setPostDetails(post); // Store the entire fetched post
+                    }
+                } catch (error) {
+                    console.log("Error fetching user's post:", error);
+                }
             }
         };
 
-        checkUserPost();
-    }, [currentUser]); // Dependency array ensures this effect runs whenever currentUser changes
+        fetchUserPost();
+    }, [currentUser]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormFields({ ...formFields, [name]: value });
     };
 
-    const submitPayment = async () => {
+    const isPriceValid = () => parseFloat(price) >= originalPrice;
+
+    const handleUpdatePostFree = async () => {
+        if (!isPriceValid()) {
+            alert("You cannot lower the price of your post.");
+            return;
+        }
+        if (postDetails) {
+            await updatePost(postDetails.id, message, image, parseFloat(price) - originalPrice);
+            setSuccess(true);
+            navigate('/');
+        }
+    };
+
+    const handleUpdatePostPaid = async () => {
+        if (!isPriceValid()) {
+            alert("The new price cannot be lower than the original price.");
+            return;
+        }
         const paymentAmount = Math.round(formFields.price * 100);
-        console.log(paymentAmount + " (cents)");
     
         if (!stripe || !elements) {
             console.log("Stripe has not loaded yet.");
             return;
         }
         
-        const userID = currentUser.uid;
-        const username = currentUser.displayName;
         const cardElement = elements.getElement(CardElement);
         const { error, paymentMethod } = await stripe.createPaymentMethod({
             type: 'card',
@@ -99,12 +126,8 @@ const Submit = () => {
                 if (response.data.success) {
                     console.log("Payment successful:", response.data);
                     setSuccess(true);
-                    
-
-                    const postPrice = paymentAmount/100
-                    //PAYMENT IS SUCCESSFUL, THIS ACTUALLY PUTS IN THE POST!
                     try {
-                        await addPost(userID, username, message, image, postPrice);
+                        await updatePost(postDetails.id, message, image, parseFloat(price) - originalPrice);
                         resetFormFields();
                         navigate('/');
                     } catch (error) {
@@ -123,21 +146,17 @@ const Submit = () => {
             setSuccess(false);
         }
     };
-    
-    //If user is not signed in, return div
 
     if (!currentUser) {
-        return <div><h1>Sign in to post a message</h1></div>;
-    }
-
-    if (userHasPost) {
-        return <div><UpdatePost /></div>;
+        return <div><h1>Please sign in to update your post</h1></div>;
     }
 
     return (
         <div>
+            <h1>Update your post</h1>
+
             <form onSubmit={(e) => e.preventDefault()}>
-                <FormInput
+            <FormInput
                     label="Message"
                     maxLength={250}
                     type="text"
@@ -163,17 +182,22 @@ const Submit = () => {
                     name="image"
                     value={image}
                 />
-                <fieldset className="FormGroup-Stripe">
+                {(parseFloat(price) - originalPrice).toFixed(2) > 0 ? <h2>You will be charged $ {(parseFloat(price) - originalPrice).toFixed(2)}</h2> : null}
+                {(parseFloat(price) - originalPrice).toFixed(2) > 0 ? 
+                 <fieldset className="FormGroup-Stripe">
                     <div className="FormRow-Stripe">
                         <CardElement options={CARD_OPTIONS} />
                     </div>
                 </fieldset>
-                <Button type="button" onClick={submitPayment} disabled={!stripe || !elements || success}>
+                : null }
+                {parseFloat(price) === originalPrice ?  <Button type="button" onClick={handleUpdatePostFree} disabled={!stripe || !elements || success || !(parseFloat(price) - originalPrice  === 0)}>
+                    Update Post
+                </Button> :  <Button type="button" onClick={handleUpdatePostPaid} disabled={!stripe || !elements || success}>
                     Pay
-                </Button>
+                </Button>}
             </form>
         </div>
     );
 };
 
-export default Submit;
+export default UpdatePost;
