@@ -92,8 +92,9 @@ const UpdatePost = () => {
             alert("The new price cannot be lower than the original price.");
             return;
         }
-        const paymentAmount = Math.round(formFields.price * 100);
-    
+        const paymentAmount =(Math.round((parseFloat(price) - originalPrice).toFixed(2) ) * 100);
+        console.log((formFields.price - originalPrice).toFixed(2));
+
         if (!stripe || !elements) {
             console.log("Stripe has not loaded yet.");
             return;
